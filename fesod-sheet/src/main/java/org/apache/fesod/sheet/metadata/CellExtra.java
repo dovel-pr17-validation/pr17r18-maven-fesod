@@ -1,0 +1,106 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+/*
+ * This file is part of the Apache Fesod (Incubating) project, which was derived from Alibaba EasyExcel.
+ *
+ * Copyright (C) 2018-2024 Alibaba Group Holding Ltd.
+ */
+
+package org.apache.fesod.sheet.metadata;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.fesod.sheet.constant.ExcelXmlConstants;
+import org.apache.fesod.sheet.enums.CellExtraTypeEnum;
+import org.apache.poi.ss.util.CellReference;
+
+/**
+ * Cell extra information.
+ *
+ *
+ */
+@Getter
+@Setter
+public class CellExtra extends AbstractCell {
+    /**
+     * Cell extra type
+     */
+    private CellExtraTypeEnum type;
+    /**
+     * Cell extra data
+     */
+    private String text;
+    /**
+     * First row index, if this object is an interval
+     */
+    private Integer firstRowIndex;
+    /**
+     * Last row index, if this object is an interval
+     */
+    private Integer lastRowIndex;
+    /**
+     * First column index, if this object is an interval
+     */
+    private Integer firstColumnIndex;
+    /**
+     * Last column index, if this object is an interval
+     */
+    private Integer lastColumnIndex;
+
+    public CellExtra(CellExtraTypeEnum type, String text, String range) {
+        super();
+        this.type = type;
+        this.text = text;
+        String[] ranges = range.split(ExcelXmlConstants.CELL_RANGE_SPLIT);
+        CellReference first = new CellReference(ranges[0]);
+        CellReference last = first;
+        this.firstRowIndex = first.getRow();
+        this.firstColumnIndex = (int) first.getCol();
+        setRowIndex(this.firstRowIndex);
+        setColumnIndex(this.firstColumnIndex);
+        if (ranges.length > 1) {
+            last = new CellReference(ranges[1]);
+        }
+        this.lastRowIndex = last.getRow();
+        this.lastColumnIndex = (int) last.getCol();
+    }
+
+    public CellExtra(CellExtraTypeEnum type, String text, Integer rowIndex, Integer columnIndex) {
+        this(type, text, rowIndex, rowIndex, columnIndex, columnIndex);
+    }
+
+    public CellExtra(
+            CellExtraTypeEnum type,
+            String text,
+            Integer firstRowIndex,
+            Integer lastRowIndex,
+            Integer firstColumnIndex,
+            Integer lastColumnIndex) {
+        super();
+        setRowIndex(firstRowIndex);
+        setColumnIndex(firstColumnIndex);
+        this.type = type;
+        this.text = text;
+        this.firstRowIndex = firstRowIndex;
+        this.firstColumnIndex = firstColumnIndex;
+        this.lastRowIndex = lastRowIndex;
+        this.lastColumnIndex = lastColumnIndex;
+    }
+}

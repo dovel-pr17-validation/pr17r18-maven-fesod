@@ -1,0 +1,195 @@
+---
+id: 'csv'
+title: 'CSV'
+---
+
+<!--
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
+
+# Reading CSV Files
+
+This chapter introduces how to use Fesod to read custom CSV files.
+
+## Overview
+
+Fesod reads CSV files through different parameter configurations. It
+uses [Apache Commons CSV](https://commons.apache.org/proper/commons-csv) as the underlying implementation and also
+supports direct configuration
+through [CSVFormat](https://commons.apache.org/proper/commons-csv/apidocs/org/apache/commons/csv/CSVFormat.html)
+settings to achieve reading objectives.
+
+The main parameters are as follows:
+
+| Name              | Default Value      | Description                                                                                                                              |
+|:------------------|:-------------------|:-----------------------------------------------------------------------------------------------------------------------------------------|
+| `delimiter`       | `,` (comma)        | Field delimiter. It's recommended to use predefined constants from `CsvConstant`, such as `CsvConstant.AT`(`@`), `CsvConstant.TAB`, etc. |
+| `quote`           | `"` (double quote) | Field quote character. It's recommended to use predefined constants from `CsvConstant`, such as `CsvConstant.DOUBLE_QUOTE`(`"`).         |
+| `recordSeparator` | `CRLF`             | Record (line) separator. Varies by operating system, such as `CsvConstant.CRLF`(Windows) or `CsvConstant.LF`(Unix/Linux).                |
+| `nullString`      | `null`             | String used to represent `null` values. Note this is different from an empty string `""`.                                                |
+| `escape`          | `null`             | Escape character used to escape quote characters themselves.                                                                             |
+| `includeColumnIndexes` | `null`             | List of 0-based column indices to read. Excluded columns are skipped, and target columns are remapped to contiguous 0-based indices.     |
+
+---
+
+## Parameter Details and Examples
+
+The following sections will explain each parameter in detail with code examples.
+
+### delimiter
+
+`delimiter` specifies the field separator in CSV files. The default value is a comma `,`.
+Additionally, Fesod provides constants in `CsvConstant` to simplify usage.
+
+#### Code Example
+
+If the CSV file uses `\u0000` as the separator, you can configure it as follows:
+
+```java
+@Test
+public void delimiterDemo() {
+    String csvFile = "path/to/your.csv";
+    List<DemoData> dataList = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener())
+            .csv()
+            .delimiter(CsvConstant.UNICODE_EMPTY)
+            .doReadSync();
+}
+```
+
+### quote
+
+`quote` specifies the quote character that wraps fields. The default value is double quote `"`.
+This should be set when field content contains delimiters or line breaks.
+
+> Note: This cannot be the same as the `recordSeparator` setting. It's recommended to use in combination with
+`QuoteMode`.
+
+#### Code Example
+
+```java
+@Test
+public void quoteDemo() {
+    String csvFile = "path/to/your.csv";
+    List<DemoData> dataList = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener())
+            .csv()
+            .quote(CsvConstant.DOUBLE_QUOTE, QuoteMode.MINIMAL)
+            .doReadSync();
+}
+```
+
+### recordSeparator
+
+`recordSeparator` specifies the line separator in the file. Different operating systems may use different line
+separators (for example, Windows uses `CRLF`, while Unix/Linux uses `LF`).
+
+#### Code Example
+
+```java
+@Test
+public void recordSeparatorDemo() {
+    String csvFile = "path/to/your.csv";
+    List<DemoData> dataList = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener())
+            .csv()
+            .recordSeparator(CsvConstant.LF)
+            .doReadSync();
+}
+```
+
+### nullString
+
+`nullString` defines a specific string in the file that represents `null` values. For example, you can parse the string
+`"N/A"` as a `null` object.
+
+#### Code Example
+
+```java
+@Test
+public void nullStringDemo() {
+    String csvFile = "path/to/your.csv";
+    List<DemoData> dataList = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener())
+            .csv()
+            .nullString("N/A")
+            .doReadSync();
+}
+```
+
+### escape
+
+`escape` specifies an escape character that can be used when quote characters (`quote`) appear within field values.
+
+#### Code Example
+
+```java
+@Test
+public void escapeDemo() {
+    String csvFile = "path/to/your.csv";
+    List<DemoData> dataList = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener())
+            .csv()
+            .escape(CsvConstant.BACKSLASH)
+            .doReadSync();
+}
+```
+
+### includeColumnIndexes
+
+`includeColumnIndexes` specifies which columns to read from the CSV file. Unselected columns are skipped during parsing, and the resulting column indices are remapped to contiguous 0-based indices.
+
+#### Code Example
+
+```java
+@Test
+public void includeColumnIndexesDemo() {
+        String csvFile = "path/to/your.csv";
+        // Specify 0-based column indices to include (e.g., columns 0, 2, and 4)
+        List<Integer> includeColumnIndexes = Arrays.asList(0, 2, 4);
+
+        try (ExcelReader excelReader = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener()).build()) {
+           ReadSheet readSheet = FesodSheet.readSheet(0)
+                                           .includeColumnIndexes(includeColumnIndexes)
+                                           .build();
+           excelReader.read(readSheet);
+        }
+    }
+    
+```
+
+## CSVFormat Configuration Details and Examples
+
+Supports directly building a `CSVFormat` object.
+> Fesod currently still supports this approach, but it's not the most recommended usage method.
+
+### Code Example
+
+```java
+@Test
+public void csvFormatDemo() {
+
+    CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setDelimiter(CsvConstant.AT).build();
+    String csvFile = "path/to/your.csv";
+
+    try (ExcelReader excelReader = FesodSheet.read(csvFile, DemoData.class, new DemoDataListener()).build()) {
+        ReadWorkbookHolder readWorkbookHolder = excelReader.analysisContext().readWorkbookHolder();
+        // Check if it's an instance of CsvReadWorkbookHolder
+        if (readWorkbookHolder instanceof CsvReadWorkbookHolder) {
+            CsvReadWorkbookHolder csvReadWorkbookHolder = (CsvReadWorkbookHolder) readWorkbookHolder;
+            csvReadWorkbookHolder.setCsvFormat(csvFormat);
+        }
+
+        ReadSheet readSheet = FesodSheet.readSheet(0).build();
+        excelReader.read(readSheet);
+    }
+}
+```

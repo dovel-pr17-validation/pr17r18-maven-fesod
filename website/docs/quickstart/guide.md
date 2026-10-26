@@ -1,0 +1,78 @@
+---
+id: 'guide'
+title: 'Guide'
+---
+
+<!--
+- Licensed to the Apache Software Foundation (ASF) under one or more
+- contributor license agreements.  See the NOTICE file distributed with
+- this work for additional information regarding copyright ownership.
+- The ASF licenses this file to You under the Apache License, Version 2.0
+- (the "License"); you may not use this file except in compliance with
+- the License.  You may obtain a copy of the License at
+-
+-   http://www.apache.org/licenses/LICENSE-2.0
+-
+- Unless required by applicable law or agreed to in writing, software
+- distributed under the License is distributed on an "AS IS" BASIS,
+- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- See the License for the specific language governing permissions and
+- limitations under the License.
+-->
+
+# Installation
+
+## Compatibility Information
+
+The following table lists the minimum Java language version requirements for each version of the Apache Fesod(
+Incubating) library:
+
+| Version          | JDK Version Support Range | Notes                    |
+|------------------|---------------------------|--------------------------|
+| 2.1.0-incubating | JDK8 - JDK25              | Apache Incubator release |
+| 2.0.2-incubating | JDK8 - JDK25              | Apache Incubator release |
+| 2.0.1-incubating | JDK8 - JDK25              | Apache Incubator release |
+| 2.0.0-incubating | JDK8 - JDK25              | NA(not available)        |
+
+We strongly recommend using the latest version of Apache Fesod(Incubating), as performance optimizations, bug fixes, and
+new features
+in the latest version will enhance your experience.
+
+### Dependencies
+
+Apache Fesod(Incubating) uses the following key dependencies:
+
+- **Apache POI 5.5.1** - For Excel file processing
+- **Apache Commons CSV 1.14.1** - For CSV file support
+- **Ehcache 3.9.11** - For caching functionality
+
+> If your project already includes POI-related components, you may need to manually exclude POI-related jar files to
+> avoid version conflicts.
+
+## Version Update
+
+For detailed update logs, refer
+to [Details of version updates](https://github.com/apache/fesod/releases). You can also find all
+available versions in the [Maven Central Repository](https://mvnrepository.com/artifact/org.apache.fesod/fesod-sheet).
+
+## Maven
+
+If you are using Maven for project building, add the following configuration in the `pom.xml` file:
+
+```xml
+<dependency>
+    <groupId>org.apache.fesod</groupId>
+    <artifactId>fesod-sheet</artifactId>
+    <version>2.1.0-incubating</version>
+</dependency>
+```
+
+## Gradle
+
+If you are using Gradle for project building, add the following configuration in the `build.gradle` file:
+
+```gradle
+dependencies {
+    implementation 'org.apache.fesod:fesod-sheet:2.1.0-incubating'
+}
+```

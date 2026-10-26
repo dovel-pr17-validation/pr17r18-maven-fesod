@@ -1,0 +1,393 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.fesod.sheet;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.io.FileUtils;
+import org.apache.fesod.sheet.read.builder.ExcelReaderBuilder;
+import org.apache.fesod.sheet.read.builder.ExcelReaderSheetBuilder;
+import org.apache.fesod.sheet.read.listener.ReadListener;
+import org.apache.fesod.sheet.read.metadata.ReadSheet;
+import org.apache.fesod.sheet.read.metadata.ReadWorkbook;
+import org.apache.fesod.sheet.testkit.Tags;
+import org.apache.fesod.sheet.write.builder.ExcelWriterBuilder;
+import org.apache.fesod.sheet.write.builder.ExcelWriterSheetBuilder;
+import org.apache.fesod.sheet.write.builder.ExcelWriterTableBuilder;
+import org.apache.fesod.sheet.write.metadata.WriteWorkbook;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@Tag(Tags.UNIT)
+@ExtendWith(MockitoExtension.class)
+@DisplayName("FesodSheet Unit Tests")
+class FesodSheetTest {
+
+    @TempDir
+    Path tempDir;
+
+    @Mock
+    private OutputStream mockOutputStream;
+
+    @Mock
+    private InputStream mockInputStream;
+
+    @Mock
+    private ReadListener mockReadListener;
+
+    private File tempFile;
+    private String tempFilePath;
+
+    private static class DemoData {}
+
+    private WriteWorkbook writeWorkbook(ExcelWriterBuilder builder) {
+        try {
+            Method parameterMethod = ExcelWriterBuilder.class.getDeclaredMethod("parameter");
+            parameterMethod.setAccessible(true);
+            return (WriteWorkbook) parameterMethod.invoke(builder);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private ReadWorkbook writeWorkbook(ExcelReaderBuilder builder) {
+        try {
+            Method parameterMethod = ExcelReaderBuilder.class.getDeclaredMethod("parameter");
+            parameterMethod.setAccessible(true);
+            return (ReadWorkbook) parameterMethod.invoke(builder);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @BeforeEach
+    void setUp() {
+        tempFile = tempDir.resolve("test.xlsx").toFile();
+        tempFilePath = tempFile.getAbsolutePath();
+    }
+
+    @Test
+    void testWrite_noArgs_shouldReturnBuilder() {
+        ExcelWriterBuilder builder = FesodSheet.write();
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWrite_withFile_shouldConfigureFile() {
+        ExcelWriterBuilder builder = FesodSheet.write(tempFile);
+        Assertions.assertNotNull(builder);
+
+        Assertions.assertEquals(tempFile, writeWorkbook(builder).getFile());
+    }
+
+    @Test
+    void testWrite_withFileAndHead_shouldConfigureAll() {
+        ExcelWriterBuilder builder = FesodSheet.write(tempFile, DemoData.class);
+        Assertions.assertNotNull(builder);
+        Assertions.assertEquals(tempFile, writeWorkbook(builder).getFile());
+        Assertions.assertEquals(DemoData.class, writeWorkbook(builder).getClazz());
+    }
+
+    @Test
+    void testWrite_withPathName_shouldConfigureFile() {
+        ExcelWriterBuilder builder = FesodSheet.write(tempFilePath);
+        Assertions.assertNotNull(builder);
+        Assertions.assertEquals(tempFilePath, writeWorkbook(builder).getFile().getAbsolutePath());
+    }
+
+    @Test
+    void testWrite_withPathNameAndHead_shouldConfigureAll() {
+        ExcelWriterBuilder builder = FesodSheet.write(tempFilePath, DemoData.class);
+        Assertions.assertNotNull(builder);
+        WriteWorkbook workbook = writeWorkbook(builder);
+        Assertions.assertEquals(tempFilePath, workbook.getFile().getAbsolutePath());
+        Assertions.assertEquals(DemoData.class, workbook.getClazz());
+    }
+
+    @Test
+    void testWrite_withOutputStream_shouldConfigureStream() {
+        ExcelWriterBuilder builder = FesodSheet.write(mockOutputStream);
+        Assertions.assertNotNull(builder);
+        Assertions.assertSame(mockOutputStream, writeWorkbook(builder).getOutputStream());
+    }
+
+    @Test
+    void testWrite_withOutputStreamAndHead_shouldConfigureAll() {
+        ExcelWriterBuilder builder = FesodSheet.write(mockOutputStream, DemoData.class);
+        Assertions.assertNotNull(builder);
+        Assertions.assertSame(mockOutputStream, writeWorkbook(builder).getOutputStream());
+        Assertions.assertEquals(DemoData.class, writeWorkbook(builder).getClazz());
+    }
+
+    @Test
+    void testWriterSheet_noArgs_shouldReturnBuilder() {
+        ExcelWriterSheetBuilder builder = FesodSheet.writerSheet();
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWriterSheet_withSheetNo_shouldReturnBuilder() {
+        ExcelWriterSheetBuilder builder = FesodSheet.writerSheet(1);
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWriterSheet_withSheetName_shouldReturnBuilder() {
+        ExcelWriterSheetBuilder builder = FesodSheet.writerSheet("TestSheet");
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWriterSheet_withSheetNoAndName_shouldReturnBuilder() {
+        ExcelWriterSheetBuilder builder = FesodSheet.writerSheet(1, "TestSheet");
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWriterTable_noArgs_shouldReturnBuilder() {
+        ExcelWriterTableBuilder builder = FesodSheet.writerTable();
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testWriterTable_withTableNo_shouldReturnBuilder() {
+        ExcelWriterTableBuilder builder = FesodSheet.writerTable(1);
+        Assertions.assertNotNull(builder);
+    }
+
+    // --- Read Methods Tests ---
+
+    @Test
+    void testRead_noArgs_shouldReturnBuilder() {
+        ExcelReaderBuilder builder = FesodSheet.read();
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testRead_withFile_shouldConfigureFile() {
+        ExcelReaderBuilder builder = FesodSheet.read(tempFile);
+        Assertions.assertNotNull(builder);
+        ReadWorkbook workbook = writeWorkbook(builder);
+        Assertions.assertEquals(tempFile, workbook.getFile());
+    }
+
+    @Test
+    void testRead_withFileAndListener_shouldConfigureAll() {
+        ExcelReaderBuilder builder = FesodSheet.read(tempFile, mockReadListener);
+        Assertions.assertNotNull(builder);
+        Assertions.assertEquals(tempFile, writeWorkbook(builder).getFile());
+        Assertions.assertTrue(writeWorkbook(builder).getCustomReadListenerList().contains(mockReadListener));
+    }
+
+    @Test
+    void testRead_withFileHeadAndListener_shouldConfigureAll() {
+        ExcelReaderBuilder builder = FesodSheet.read(tempFile, DemoData.class, mockReadListener);
+        Assertions.assertNotNull(builder);
+        Assertions.assertEquals(tempFile, writeWorkbook(builder).getFile());
+        Assertions.assertEquals(DemoData.class, writeWorkbook(builder).getClazz());
+        Assertions.assertTrue(writeWorkbook(builder).getCustomReadListenerList().contains(mockReadListener));
+    }
+
+    @Test
+    void testRead_withInputStreamHeadAndListener_shouldConfigureAll() {
+        ExcelReaderBuilder builder = FesodSheet.read(mockInputStream, DemoData.class, mockReadListener);
+        Assertions.assertNotNull(builder);
+        Assertions.assertSame(mockInputStream, writeWorkbook(builder).getInputStream());
+        Assertions.assertEquals(DemoData.class, writeWorkbook(builder).getClazz());
+        Assertions.assertTrue(writeWorkbook(builder).getCustomReadListenerList().contains(mockReadListener));
+    }
+
+    // --- ReadSheet Methods Tests ---
+
+    @Test
+    void testReadSheet_noArgs_shouldReturnBuilder() {
+        ExcelReaderSheetBuilder builder = FesodSheet.readSheet();
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testReadSheet_withSheetNo_shouldReturnBuilder() {
+        ExcelReaderSheetBuilder builder = FesodSheet.readSheet(0);
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testReadSheet_withSheetName_shouldReturnBuilder() {
+        ExcelReaderSheetBuilder builder = FesodSheet.readSheet("DataSheet");
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testReadSheet_withAllParams_shouldReturnBuilder() {
+        ExcelReaderSheetBuilder builder = FesodSheet.readSheet(0, "DataSheet", 100);
+        Assertions.assertNotNull(builder);
+    }
+
+    @Test
+    void testReadCsv_withColumnIndexes_shouldFilterColumns() throws Exception {
+
+        String csvContent = "ID,Name,Age,Gender\n2,Bob,25,Male";
+        File csvFile = tempDir.resolve("test_columns.csv").toFile();
+        FileUtils.writeStringToFile(csvFile, csvContent, StandardCharsets.UTF_8);
+
+        List<Integer> targetColumns = Arrays.asList(0, 2);
+
+        List<Map<Integer, String>> readResults = FesodSheet.read(csvFile)
+                .csv()
+                .includeColumnIndexes(targetColumns)
+                .doReadSync();
+
+        Assertions.assertNotNull(readResults);
+        Assertions.assertEquals(1, readResults.size());
+
+        Map<Integer, String> row1 = readResults.get(0);
+        Assertions.assertEquals(
+                2, row1.size(), "Should only contain the 1 filtered columns (excepting the head by default)");
+        Assertions.assertEquals("2", row1.get(0));
+        Assertions.assertEquals("25", row1.get(1));
+    }
+
+    @Test
+    void testReadSheet_withColumnIndexes_shouldConfigureAll() {
+
+        List<List<String>> head = new ArrayList<>();
+        head.add(new ArrayList<>(Arrays.asList("ID")));
+        head.add(new ArrayList<>(Arrays.asList("Name")));
+        head.add(new ArrayList<>(Arrays.asList("Age")));
+        head.add(new ArrayList<>(Arrays.asList("Gender")));
+
+        List<List<Object>> dataList = new ArrayList<>();
+        dataList.add(Arrays.asList("1", "Alice", "30", "Female"));
+
+        FesodSheet.write(tempFile).head(head).sheet("Sheet1").doWrite(dataList);
+
+        List<Integer> targetColumns = Arrays.asList(0, 2);
+
+        ExcelReaderSheetBuilder builder = FesodSheet.readSheet(0, "Sheet1", 100, targetColumns);
+        ReadSheet configuredSheet = builder.build();
+        List<Map<Integer, String>> readResults = FesodSheet.read(tempFile)
+                .sheet(0)
+                .includeColumnIndexes(targetColumns)
+                .doReadSync();
+
+        // builder tests
+        Assertions.assertNotNull(builder, "Builder should not be null");
+        Assertions.assertNotNull(configuredSheet, "The internal ReadSheet should be created");
+        Assertions.assertEquals(0, configuredSheet.getSheetNo());
+        Assertions.assertEquals("Sheet1", configuredSheet.getSheetName());
+        Assertions.assertEquals(100, configuredSheet.getNumRows());
+        // data related tests
+        Assertions.assertNotNull(readResults);
+        Map<Integer, String> parsedRow = readResults.get(0);
+        Assertions.assertEquals(2, parsedRow.size());
+        Assertions.assertEquals("1", parsedRow.get(0));
+        Assertions.assertEquals("30", parsedRow.get(1));
+    }
+
+    @Test
+    void testReadSheet_withColumnIndexes_xlsFormat() {
+        File xlsFile = tempDir.resolve("test.xls").toFile();
+
+        List<List<String>> head = new ArrayList<>();
+        head.add(Arrays.asList("ID"));
+        head.add(Arrays.asList("Name"));
+        head.add(Arrays.asList("Age"));
+        head.add(Arrays.asList("Gender"));
+
+        List<List<Object>> dataList = new ArrayList<>();
+        dataList.add(Arrays.asList("1", "Alice", "30", "Female"));
+
+        FesodSheet.write(xlsFile).head(head).sheet("Sheet1").doWrite(dataList);
+
+        List<Integer> targetColumns = Arrays.asList(0, 2);
+
+        List<Map<Integer, String>> readResults = FesodSheet.read(xlsFile)
+                .sheet(0)
+                .includeColumnIndexes(targetColumns)
+                .doReadSync();
+
+        Assertions.assertNotNull(readResults);
+        Map<Integer, String> parsedRow = readResults.get(0);
+        Assertions.assertEquals(2, parsedRow.size(), "Should only contain 2 filtered columns");
+        Assertions.assertEquals("1", parsedRow.get(0));
+        Assertions.assertEquals("30", parsedRow.get(1));
+    }
+
+    @Test
+    void testReadSheet_withColumnIndexes_xlsFormat_allCellTypes() {
+        File xlsFile = tempDir.resolve("test_all_types.xls").toFile();
+
+        List<List<String>> head = new ArrayList<>();
+        head.add(Arrays.asList("StringCol"));
+        head.add(Arrays.asList("NumberCol"));
+        head.add(Arrays.asList("BooleanCol"));
+        head.add(Arrays.asList("DateCol"));
+        head.add(Arrays.asList("FormulaCol"));
+        head.add(Arrays.asList("BlankCol"));
+
+        List<Object> row = new ArrayList<>();
+        row.add("Hello Fesod");
+        row.add(100.50);
+        row.add(true);
+        row.add(new Date());
+        row.add("=SUM(10, 20)");
+        row.add(null);
+
+        List<List<Object>> dataList = Collections.singletonList(row);
+
+        FesodSheet.write(xlsFile).head(head).sheet("Sheet1").doWrite(dataList);
+
+        List<Integer> targetColumns = Arrays.asList(0, 2, 4);
+
+        List<Map<Integer, String>> readResults = FesodSheet.read(xlsFile)
+                .sheet(0)
+                .includeColumnIndexes(targetColumns)
+                .doReadSync();
+
+        Assertions.assertNotNull(readResults);
+        Assertions.assertEquals(1, readResults.size());
+
+        Map<Integer, String> parsedRow = readResults.get(0);
+
+        Assertions.assertEquals(3, parsedRow.size(), "Should only contain the 3 requested target columns");
+
+        Assertions.assertEquals("Hello Fesod", parsedRow.get(0), "Target 0 should contain String from Col 0");
+        Assertions.assertEquals("TRUE", parsedRow.get(1).toUpperCase(), "Target 1 should contain Boolean from Col 2");
+
+        Assertions.assertNotNull(parsedRow.get(2), "Target 2 should contain Formula result from Col 4");
+    }
+}

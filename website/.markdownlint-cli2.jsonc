@@ -1,0 +1,51 @@
+{
+  "globs": [
+    "website/**/*.md"
+  ],
+  "config": {
+    "default": true,
+    "MD001": true,
+    "MD003": true,
+    "MD022": false,
+    "MD041": false,
+    "MD013": {
+      "line_length": 600,
+      "code_blocks": false,
+      "tables": false
+    },
+    "MD024": {
+      "siblings_only": true
+    },
+    "MD025": false,
+    "MD029": true,
+    "MD033": {
+      "allowed_elements": [
+        "div",
+        "table",
+        "tr",
+        "td",
+        "a",
+        "img",
+        "sub",
+        "b",
+        "br",
+        "tbody",
+        "mark",
+        "font",
+        "p"
+      ]
+    },
+    "MD036": false,
+    "MD040": true,
+    "MD045": true,
+    "MD046": true,
+    "MD047": true,
+    "MD052": true,
+    "MD060": false
+  },
+  "ignores": [
+    "**/node_modules/**",
+    "**/target/**",
+    "**/dist/**"
+  ]
+}
